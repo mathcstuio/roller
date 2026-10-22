@@ -100,8 +100,9 @@ textarea{width:100%;min-height:100px;resize:vertical;border:1px solid var(--line
 .note{font-size:13.5px;color:var(--muted);margin:0}
 .eq{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:17px;font-family:"Gowun Batang",serif}
 .eq input,.num{width:76px;border:1px solid var(--line);border-radius:10px;padding:7px 9px;font:16px/1.2 var(--ff);background:var(--stage);color:var(--ink);text-align:center}
-.slider{display:grid;grid-template-columns:2.2em 1fr 4.2em;align-items:center;gap:8px;font-size:15px}
+.slider{display:grid;grid-template-columns:2.2em 1fr 5.4em;align-items:center;gap:8px;font-size:15px}
 .slider input{width:100%;accent-color:var(--c2)}
+.slider .num{width:100%}
 .slider output{font-variant-numeric:tabular-nums;text-align:right}
 table.cond{border-collapse:collapse;width:100%;font-size:14.5px;font-variant-numeric:tabular-nums}
 table.cond td,table.cond th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
@@ -187,7 +188,7 @@ td.ok{color:var(--c1);font-weight:700} td.mid{color:var(--c3);font-weight:500} t
           <defs>
             <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bcd9f0"/><stop offset="1" stop-color="#eef5fb"/></linearGradient>
             <linearGradient id="soil" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fbf6a"/><stop offset=".2" stop-color="#7aa858"/><stop offset="1" stop-color="#6b8f4c"/></linearGradient>
-            <clipPath id="insetClip"><circle cx="450" cy="150" r="118"/></clipPath>
+            <clipPath id="insetClip"><circle cx="300" cy="160" r="118"/></clipPath>
           </defs>
           <rect width="900" height="800" fill="url(#sky)"/>
           <path d="M0 690 Q120 610 260 660 T540 650 T900 640 V740 H0Z" fill="#a9c8a0" opacity=".55"/>
@@ -212,7 +213,6 @@ td.ok{color:var(--c1);font-weight:700} td.mid{color:var(--c3);font-weight:500} t
           <button data-zoom="A" aria-pressed="false">A 확대</button>
           <button data-zoom="B" aria-pressed="false">B 확대</button>
         </div>
-        <label class="rng">배율 <input type="range" id="zoomR" min="1" max="40" step="1" value="4"><span id="zoomV">×4</span></label>
         <label class="check"><input type="checkbox" id="gridT" checked> 좌표 격자</label>
       </div>
       <div class="runlog" id="runlog">‘열차 출발’을 누르면 운행 기록이 여기에 남아요.</div>
@@ -227,11 +227,11 @@ td.ok{color:var(--c1);font-weight:700} td.mid{color:var(--c3);font-weight:500} t
         <li><button data-m="5"><b>✎</b>정리하기</button></li>
       </ul>
       <details class="blueprint" open>
-        <summary>설계 도면 (1칸 = 10 m)</summary>
+        <summary>설계 도면 (가로 1칸 = 10 m, 세로 1칸 = 5 m)</summary>
         <ul>
-          <li>왼쪽 레일: y = −(9/8)x + 4 &nbsp;(x ≤ 0), 끝점 <b>A(0, 4)</b></li>
-          <li>오른쪽 레일: y = (15/8)x − 6 &nbsp;(x ≥ 4), 시작점 <b>B(4, 3/2)</b></li>
-          <li>새 레일을 놓을 구간: 0 ≤ x ≤ 4</li>
+          <li>왼쪽 레일: y = −x + 2 &nbsp;(x ≤ 0), 끝점 <b>A(0, 2)</b></li>
+          <li>오른쪽 레일: y = 7x − 10 &nbsp;(x ≥ 2), 시작점 <b>B(2, 4)</b></li>
+          <li>새 레일을 놓을 구간: 0 ≤ x ≤ 2</li>
         </ul>
       </details>
       <div id="mpane"></div>
@@ -301,13 +301,14 @@ function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 
 /* ---------- 수학 설정 ---------- */
-const X0=-2.5,X1=6.5,Y1=7.4,U=100;
-const px=x=>(x-X0)*U, py=y=>(Y1-y)*U;
-const SA=-9/8, SB=15/8, CLEAR=0.5;
-const JOINTS=[{id:'A',x:0,y:4,s:SA},{id:'B',x:4,y:1.5,s:SB}];
-const leftR=x=>SA*x+4, rightR=x=>SB*x-6;
-const TRUE={type:'cubic',a:1/8,b:-3/8,c:-9/8,d:4};
-const CAND={line:{type:'line',p:-5/8,q:4},quad:{type:'quad',a:1/8,b:-9/8,c:4},cubic:TRUE};
+const X0=-1.6,X1=2.9,Y1=7.4,UX=200,UY=100;   // 가로 1칸 = 10 m(200px), 세로 1칸 = 5 m(100px) → 실제 비율과 같음
+const px=x=>(x-X0)*UX, py=y=>(Y1-y)*UY;
+const scr=s=>s*UY/UX;                          // 칸 단위 기울기 → 화면(실제) 기울기
+const L=2, SA=-1, SB=7, CLEAR=1;
+const JOINTS=[{id:'A',x:0,y:2,s:SA},{id:'B',x:L,y:4,s:SB}];
+const leftR=x=>SA*x+2, rightR=x=>SB*x-10;
+const TRUE={type:'cubic',a:1,b:-1,c:-1,d:2};
+const CAND={line:{type:'line',p:1,q:2},quad:{type:'quad',a:1,b:-1,c:2},cubic:TRUE};
 const CAND_NAME={line:'(가) 직선 레일',quad:'(나) 곡선 레일 1',cubic:'(다) 곡선 레일 2'};
 function fD(d,x){if(!d)return null;if(d.type==='line')return d.p*x+d.q;if(d.type==='quad')return(d.a*x+d.b)*x+d.c;return((d.a*x+d.b)*x+d.c)*x+d.d;}
 function sD(d,x){if(!d)return null;if(d.type==='line')return d.p;if(d.type==='quad')return 2*d.a*x+d.b;return(3*d.a*x+2*d.b)*x+d.c;}
@@ -316,14 +317,15 @@ function parseNum(s){s=String(s||'').trim().replace(/[−–—]/g,'-').replace(
   if(/^[-+]?(\d+\.?\d*|\.\d+)$/.test(s))return+s;return NaN;}
 const same=(a,b)=>Math.abs(a-b)<1e-9;
 function nfmt(v){if(v==null||!isFinite(v))return'–';const r=Math.round(v*1000)/1000;return(r<0?'−':'')+String(Math.abs(r));}
+const kinkDeg=(s1,s2)=>Math.abs(Math.atan(scr(s1))-Math.atan(scr(s2)))*180/Math.PI;
 
 /* ---------- 상태 ---------- */
-let KEY='rail-v1-guest',ME=null,mission=1;
+let KEY='rail-v2-guest',ME=null,mission=1;
 const fresh=()=>({v:1,done:{m1:false,m2:false,m3:false,m4:false},submitted:{},notes:{1:'',2:'',3:'',4:'',final:''},hints:{1:0,3:0,4:0},
   m1:{p:'',q:'',pv:null,qv:null,placed:false,runs:0,derails:0,tries:0},
   m2:{cand:'line',tried:{line:false,quad:false,cubic:false},zoomed:false,q1:'',q1Tries:0,explained:false,conds:[],condOK:false,condTries:0,deg:'',degTries:0},
-  m3:{a:0,b:0,c:0,d:4,slid:0,fp:'',fpTries:0,ia:'',ib:'',ic:'',id:'',useInput:false,tries:0},
-  m4:{q1:'',q1Tries:0,tx:1,tanUsed:false,q2:'',q2Tries:0,x:'',y:'',xyTries:0,xyOK:false,judge:'',judgeTries:0}});
+  m3:{a:0,b:0,c:0,d:3,ta:'0',tb:'0',tc:'0',td:'3',slid:0,typed:0,fp:'',fpTries:0,ranSmooth:false},
+  m4:{q1:'',q1Tries:0,tx:0.3,tanUsed:false,q2:'',q2Tries:0,x:'',y:'',xyTries:0,xyOK:false,judge:'',judgeTries:0}});
 let S=fresh();
 function loadLocal(){let raw=null;try{raw=localStorage.getItem(KEY);}catch(e){}const base=fresh();
   if(raw){try{const o=JSON.parse(raw);S=deepMerge(base,o);return;}catch(e){}}S=base;}
@@ -331,74 +333,75 @@ function deepMerge(a,b){if(!b||typeof b!=='object'||Array.isArray(b))return b===
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}queueSync();}
 
 /* ---------- 현재 레일 설계 ---------- */
-function liveCubic(){const m=S.m3;if(m.useInput){const v=[m.ia,m.ib,m.ic,m.id].map(parseNum);if(v.every(isFinite))return{type:'cubic',a:v[0],b:v[1],c:v[2],d:v[3]};}
-  return{type:'cubic',a:m.a,b:m.b,c:m.c,d:m.d};}
+function liveCubic(){const m=S.m3;return{type:'cubic',a:m.a,b:m.b,c:m.c,d:m.d};}
 function design(){
   if(mission===1)return S.m1.placed?{type:'line',p:S.m1.pv,q:S.m1.qv}:null;
   if(mission===2)return CAND[S.m2.cand];
   if(mission===3)return liveCubic();
   return S.done.m3?TRUE:liveCubic();
 }
-const trackY=(x,d)=>x<0?leftR(x):x>4?rightR(x):fD(d,x);
+const trackY=(x,d)=>x<0?leftR(x):x>L?rightR(x):fD(d,x);
 
 /* ---------- 장면 그리기 ---------- */
 function drawGrid(){const g=$('gGrid');g.innerHTML='';if(!$('gridT').checked)return;
-  for(let x=-2;x<=6;x++){el('line',{x1:px(x),y1:0,x2:px(x),y2:740,class:x===0?'axl':'gridl'},g);const t=el('text',{x:px(x)+4,y:732,class:'glab'},g);t.textContent=x;}
-  for(let y=1;y<=7;y++){el('line',{x1:0,y1:py(y),x2:900,y2:py(y),class:'gridl'},g);const t=el('text',{x:px(-2.5)+6,y:py(y)-5,class:'glab'},g);t.textContent=y;}
+  for(let i=-3;i<=5;i++){const x=i/2;el('line',{x1:px(x),y1:0,x2:px(x),y2:740,class:x===0?'axl':(i%2?'gridl':'gridl')},g);
+    if(i%2===0||true){const t=el('text',{x:px(x)+4,y:732,class:'glab'},g);t.textContent=String(x).replace('-','−');}}
+  for(let y=1;y<=7;y++){el('line',{x1:0,y1:py(y),x2:900,y2:py(y),class:'gridl'},g);const t=el('text',{x:6,y:py(y)-5,class:'glab'},g);t.textContent=y;}
   const t=el('text',{x:886,y:732,class:'glab','text-anchor':'end'},g);t.textContent='x';
 }
-function railD(fn,x0,x1){let s='';for(let x=x0;x<=x1+1e-9;x+=0.02){const y=fn(x);if(y==null)return'';s+=(s?'L':'M')+px(x).toFixed(1)+' '+py(y).toFixed(1);}return s;}
+function railD(fn,x0,x1){let s='';for(let x=x0;x<=x1+1e-9;x+=0.01){const y=fn(x);if(y==null)return'';s+=(s?'L':'M')+px(x).toFixed(1)+' '+py(y).toFixed(1);}return s;}
 function drawRail(g,fn,x0,x1,color){
   const d=railD(fn,x0,x1);if(!d)return;
-  for(let x=Math.ceil(x0*5)/5;x<=x1;x+=0.2){const y=fn(x),h=.01,s=(fn(Math.min(x1,x+h))-fn(Math.max(x0,x-h)))/((Math.min(x1,x+h))-(Math.max(x0,x-h)));
-    const L=Math.hypot(1,s),nx=-s/L,ny=-1/L;const cx=px(x),cy=py(y);el('line',{x1:cx+nx*9,y1:cy-ny*9,x2:cx-nx*9,y2:cy+ny*9,stroke:'#7b5a3d','stroke-width':4,'stroke-linecap':'round'},g);}
+  for(let x=Math.ceil(x0*10)/10;x<=x1+1e-9;x+=0.1){const h=.005,a=Math.max(x0,x-h),b=Math.min(x1,x+h);const s=scr((fn(b)-fn(a))/(b-a));
+    const Ln=Math.hypot(1,s),nx=-s/Ln,ny=-1/Ln;const cx=px(x),cy=py(fn(x));el('line',{x1:cx+nx*9,y1:cy-ny*9,x2:cx-nx*9,y2:cy+ny*9,stroke:'#7b5a3d','stroke-width':4,'stroke-linecap':'round'},g);}
   el('path',{d,fill:'none',stroke:color,'stroke-width':7,'stroke-linecap':'round','stroke-linejoin':'round'},g);
   el('path',{d,fill:'none',stroke:'#e3e7ee','stroke-width':2,'stroke-linecap':'round',transform:'translate(0 -2)'},g);
 }
 function drawPillars(d){const g=$('gPillars');g.innerHTML='';
-  const put=(x,y)=>{if(y==null||y<0.05)return;el('line',{x1:px(x),y1:py(y)+6,x2:px(x),y2:740,stroke:'#8c94a3','stroke-width':6},g);el('line',{x1:px(x)-10,y1:740,x2:px(x)+10,y2:740,stroke:'#6e7584','stroke-width':6},g);};
-  [-2,-1].forEach(x=>put(x,leftR(x)));[5,6].forEach(x=>put(x,rightR(x)));
-  if(d)[1,2,3].forEach(x=>{const y=fD(d,x);if(y!=null&&y>0)put(x,y);});
+  const put=(x,y)=>{if(y==null||y<0.05||y>7.4)return;el('line',{x1:px(x),y1:py(y)+6,x2:px(x),y2:740,stroke:'#8c94a3','stroke-width':6},g);el('line',{x1:px(x)-10,y1:740,x2:px(x)+10,y2:740,stroke:'#6e7584','stroke-width':6},g);};
+  [-1.5,-1,-0.5].forEach(x=>put(x,leftR(x)));[2.25].forEach(x=>put(x,rightR(x)));
+  if(d)[0.5,1,1.5].forEach(x=>{const y=fD(d,x);if(y!=null&&y>0)put(x,y);});
 }
 function renderTrack(){
   const d=design();drawGrid();drawPillars(d);
-  const gR=$('gRails');gR.innerHTML='';drawRail(gR,leftR,X0,0,'#3b4251');drawRail(gR,rightR,4,X1,'#3b4251');
+  const gR=$('gRails');gR.innerHTML='';drawRail(gR,leftR,X0,0,'#3b4251');drawRail(gR,rightR,L,(Y1+10)/7,'#3b4251');
   const gN=$('gNew');gN.innerHTML='';
-  if(d){const yb=fD(d,0),ye=fD(d,4);drawRail(gN,x=>fD(d,x),0,4,'#1f7a6c');}
-  else{const t=el('text',{x:px(2),y:py(3.2),'text-anchor':'middle',class:'jlab'},gN);t.textContent='끊긴 구간';
-    [0.35,3.65].forEach(x=>{el('path',{d:`M${px(x)-12} 740 L${px(x)} 708 L${px(x)+12} 740Z`,fill:'#e8792b',stroke:'#fff','stroke-width':2},gN);});}
+  if(d)drawRail(gN,x=>fD(d,x),0,L,'#1f7a6c');
+  else{const t=el('text',{x:px(1),y:py(3.3),'text-anchor':'middle',class:'jlab'},gN);t.textContent='끊긴 구간';
+    [0.2,1.8].forEach(x=>{el('path',{d:`M${px(x)-12} 740 L${px(x)} 708 L${px(x)+12} 740Z`,fill:'#e8792b',stroke:'#fff','stroke-width':2},gN);});}
   const gJ=$('gJoints');gJ.innerHTML='';
   JOINTS.forEach(J=>{el('circle',{cx:px(J.x),cy:py(J.y),r:7,fill:'#fff',stroke:'#1d2433','stroke-width':3},gJ);
-    const t=el('text',{x:px(J.x)+(J.id==='A'?-14:14),y:py(J.y)-16,'text-anchor':J.id==='A'?'end':'start',class:'jlab'},gJ);t.textContent=J.id==='A'?'A(0, 4)':'B(4, 3/2)';});
+    const t=el('text',{x:px(J.x)+(J.id==='A'?-12:16),y:py(J.y)+(J.id==='A'?32:6),'text-anchor':J.id==='A'?'end':'start',class:'jlab'},gJ);t.textContent=J.id==='A'?'A(0, 2)':'B(2, 4)';});
   const gS=$('gSafe');gS.innerHTML='';
-  if(mission>=4){el('line',{x1:px(-0.2),y1:py(CLEAR),x2:px(4.2),y2:py(CLEAR),stroke:'#c2412d','stroke-width':2.5,'stroke-dasharray':'10 7'},gS);
-    const t=el('text',{x:px(4.25),y:py(CLEAR)+5,class:'jlab',fill:'#c2412d'},gS);t.textContent='안전 기준 0.5';
-    if(S.m4.xyOK){el('circle',{cx:px(3),cy:py(5/8),r:8,fill:'#c2412d',stroke:'#fff','stroke-width':2.5},gS);const t2=el('text',{x:px(3),y:py(5/8)+30,'text-anchor':'middle',class:'jlab'},gS);t2.textContent='(3, 5/8)';}}
+  if(mission>=4){el('line',{x1:px(-0.15),y1:py(CLEAR),x2:px(2.15),y2:py(CLEAR),stroke:'#c2412d','stroke-width':2.5,'stroke-dasharray':'10 7'},gS);
+    const t=el('text',{x:px(2.2),y:py(CLEAR)+6,class:'jlab',fill:'#c2412d'},gS);t.textContent='안전 기준 1';
+    if(S.m4.xyOK){el('circle',{cx:px(1),cy:py(1),r:9,fill:'none',stroke:'#c2412d','stroke-width':3},gS);const t2=el('text',{x:px(1),y:py(1)+34,'text-anchor':'middle',class:'jlab'},gS);t2.textContent='최저점 (1, 1)';}}
   drawTangent();drawInset();placeCarIdle();
 }
-function drawTangent(){const g=$('gTan');g.innerHTML='';if(mission!==4||!S.m4.tanUsed&&!(S.m4.q1==='no'))return;
-  const d=design(),x=S.m4.tx,y=fD(d,x),s=sD(d,x);if(y==null)return;const w=1.1;
+function drawTangent(){const g=$('gTan');g.innerHTML='';if(mission!==4||!(S.m4.tanUsed||S.m4.q1==='no'))return;
+  const d=design(),x=S.m4.tx,y=fD(d,x),s=sD(d,x);if(y==null)return;const w=0.45;
   el('line',{x1:px(x-w),y1:py(y-s*w),x2:px(x+w),y2:py(y+s*w),stroke:'#2f55a4','stroke-width':3},g);
-  el('circle',{cx:px(x),cy:py(y),r:6,fill:'#2f55a4',stroke:'#fff','stroke-width':2},g);
-  const t=el('text',{x:px(x),y:py(y)-22,'text-anchor':'middle',class:'jlab'},g);t.textContent=`접선 기울기 ${nfmt(s)}`;}
+  el('circle',{cx:px(x),cy:py(y),r:5,fill:'#2f55a4',stroke:'#fff','stroke-width':2},g);
+  const t=el('text',{x:px(x),y:py(y)-24,'text-anchor':'middle',class:'jlab'},g);t.textContent=`x = ${nfmt(x)}, 접선 기울기 ${nfmt(s)}`;}
 /* 확대경 */
 let zoomAt='off';
 function drawInset(){const g=$('gInset');g.innerHTML='';if(zoomAt==='off')return;
-  const J=JOINTS.find(j=>j.id===zoomAt),z=+$('zoomR').value,w=1.6/z,R=118,cx=450,cy=150,d=design();
+  const J=JOINTS.find(j=>j.id===zoomAt),z=8,R=118,cx=300,cy=160,d=design();
+  const k=z*R/(0.8*UX);                              // 화면 비율을 유지하며 확대
+  const map=(x,y)=>[cx+(x-J.x)*UX*k,cy-(y-J.y)*UY*k];
+  const w=R/(UX*k)*1.3;
   el('line',{x1:cx,y1:cy+R,x2:px(J.x),y2:py(J.y),stroke:'#1d2433','stroke-width':1.5,'stroke-dasharray':'4 4'},g);
   el('circle',{cx:px(J.x),cy:py(J.y),r:16,fill:'none',stroke:'#1d2433','stroke-width':2},g);
   const c=el('g',{'clip-path':'url(#insetClip)'},g);
   el('circle',{cx,cy,r:R,fill:'#f7fafc'},c);
-  const map=(x,y)=>[cx+(x-J.x)/w*R,cy-(y-J.y)/w*R];
-  const seg=(fn,a,b,col)=>{a=Math.max(a,J.x-w*1.2);b=Math.min(b,J.x+w*1.2);if(a>=b)return;let s='';for(let i=0;i<=80;i++){const x=a+(b-a)*i/80,y=fn(x);if(y==null)return;const[X,Y]=map(x,y);s+=(s?'L':'M')+X.toFixed(1)+' '+Y.toFixed(1);}el('path',{d:s,fill:'none',stroke:col,'stroke-width':6,'stroke-linecap':'round'},c);};
-  seg(leftR,-99,0,'#3b4251');seg(rightR,4,99,'#3b4251');if(d)seg(x=>fD(d,x),0,4,'#1f7a6c');
+  const seg=(fn,a,b,col)=>{a=Math.max(a,J.x-w);b=Math.min(b,J.x+w);if(a>=b)return;let s='';for(let i=0;i<=100;i++){const x=a+(b-a)*i/100,y=fn(x);if(y==null)return;const[X,Y]=map(x,y);s+=(s?'L':'M')+X.toFixed(1)+' '+Y.toFixed(1);}el('path',{d:s,fill:'none',stroke:col,'stroke-width':6,'stroke-linecap':'round'},c);};
+  seg(leftR,-99,0,'#3b4251');seg(rightR,L,99,'#3b4251');if(d)seg(x=>fD(d,x),0,L,'#1f7a6c');
   el('circle',{cx,cy,r:5,fill:'#fff',stroke:'#1d2433','stroke-width':2},c);
   el('circle',{cx,cy,r:R,fill:'none',stroke:'#1d2433','stroke-width':3},g);
-  const t=el('text',{x:cx,y:cy-R-10,'text-anchor':'middle',class:'jlab'},g);t.textContent=`${J.id} 연결점 ×${z}`;
+  const t=el('text',{x:cx,y:cy-R-10,'text-anchor':'middle',class:'jlab'},g);t.textContent=`${J.id} 연결점 확대`;
 }
 document.querySelectorAll('[data-zoom]').forEach(b=>b.onclick=()=>{zoomAt=b.dataset.zoom;document.querySelectorAll('[data-zoom]').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
   if(zoomAt!=='off'&&mission===2&&!S.m2.zoomed){S.m2.zoomed=true;save();}drawInset();});
-$('zoomR').oninput=()=>{$('zoomV').textContent='×'+$('zoomR').value;drawInset();};
 $('gridT').onchange=renderTrack;
 
 /* ---------- 열차 ---------- */
@@ -409,28 +412,29 @@ function buildCar(){const g=$('gTrain');g.innerHTML='';car=el('g',{},g);
   [-14,8].forEach(x=>{el('circle',{cx:x,cy:-46,r:7,fill:'#f1c9a5',stroke:'#7a5236','stroke-width':1.5},car);});
   [-20,22].forEach(x=>el('circle',{cx:x,cy:-6,r:7,fill:'#2b2f38',stroke:'#c9ced6','stroke-width':2},car));
 }
-function placeCar(x,y,s,jx=0,jy=0,rot=null){if(!car)buildCar();const a=rot!=null?rot:-Math.atan(s)*180/Math.PI;car.setAttribute('transform',`translate(${(px(x)+jx).toFixed(1)} ${(py(y)+jy).toFixed(1)}) rotate(${a.toFixed(2)})`);}
-function placeCarIdle(){if(running)return;placeCar(-2.2,leftR(-2.2),SA);}
+function placeCar(x,y,s,jx=0,jy=0,rot=null){if(!car)buildCar();const a=rot!=null?rot:-Math.atan(scr(s))*180/Math.PI;car.setAttribute('transform',`translate(${(px(x)+jx).toFixed(1)} ${(py(y)+jy).toFixed(1)}) rotate(${a.toFixed(2)})`);}
+const START=-1.4, END=2.45;
+function placeCarIdle(){if(running)return;placeCar(START,leftR(START),SA);}
 function burst(J,ang){const g=$('gFx');const big=ang>=30;const t=el('text',{x:px(J.x),y:py(J.y)-58,'text-anchor':'middle',class:'burst',fill:big?'#c2412d':'#b4730e'},g);t.textContent=big?'쾅!':ang>=5?'덜컹!':'덜컥';setTimeout(()=>t.remove(),1200);}
 let running=false;
 function run(){
   if(running)return;running=true;$('bRun').disabled=true;
-  const d=design(),jolts=[];let x=-2.2,last=null,shake=0,derail=null;
-  const speed=1.8;
-  function slopeAt(x){const h=.004;if(x<0)return SA;if(x>4)return SB;return sD(d,x);}
+  const d=design(),jolts=[];let x=START,last=null,shake=0,derail=null;
+  const speed=0.8;
+  function slopeAt(x){if(x<0)return SA;if(x>L)return SB;return sD(d,x);}
   function frame(t){
     if(last==null)last=t;const dt=Math.min(.05,(t-last)/1000);last=t;let nx=x+speed*dt;
     for(const J of JOINTS){if(x<J.x&&nx>=J.x){
       const yN=fD(d,J.x);
-      if(yN==null||Math.abs(yN-J.y)>0.01){derail={at:J.id,jump:yN==null?null:yN-J.y};return fall(J.x,J.y,J.x===0?SA:sD(d,J.x));}
-      const sN=sD(d,J.x),ang=Math.abs(Math.atan(J.s)-Math.atan(sN))*180/Math.PI;
+      if(yN==null||Math.abs(yN-J.y)>0.01){derail={at:J.id};return fall(J.x,J.y,J.x===0?SA:sD(d,J.x));}
+      const ang=kinkDeg(J.s,sD(d,J.x));
       if(ang>0.5){jolts.push({at:J.id,ang});burst(J,ang);shake=Math.min(0.6,0.15+ang/150);}
     }}
     x=nx;const y=trackY(x,d);let jx=0,jy=0;if(shake>0){shake-=dt;const k=shake*28;jx=(Math.random()-.5)*k;jy=(Math.random()-.5)*k;}
     placeCar(x,y,slopeAt(x),jx,jy);
-    if(x>=6.3)return finish();requestAnimationFrame(frame);
+    if(x>=END)return finish();requestAnimationFrame(frame);
   }
-  function fall(x0,y0,s0){let vx=speed,vy=speed*s0,xx=x0,yy=y0,rot=-Math.atan(s0)*180/Math.PI,tt=0,l2=null;
+  function fall(x0,y0,s0){let vx=speed,vy=speed*s0,xx=x0,yy=y0,rot=-Math.atan(scr(s0))*180/Math.PI,tt=0,l2=null;
     const g=$('gFx');const t=el('text',{x:px(x0),y:py(y0)-60,'text-anchor':'middle',class:'burst',fill:'#c2412d'},g);t.textContent='탈선!';setTimeout(()=>t.remove(),1300);
     function f2(t){if(l2==null)l2=t;const dt=Math.min(.05,(t-l2)/1000);l2=t;tt+=dt;vy-=9*dt;xx+=vx*dt;yy+=vy*dt;rot+=200*dt;
       if(yy<0.12){yy=0.12;vy=0;vx*=0.8;}placeCar(xx,yy,0,0,0,rot);if(tt<1.3)requestAnimationFrame(f2);else finish();}
@@ -452,7 +456,7 @@ function onRun(r){
   if(mission===1){const m=S.m1;m.runs++;
     if(r.derail){m.derails++;save();
       if(!r.d)return say('새 레일이 없어서 열차가 끊긴 구간에 떨어졌어요. 먼저 직선 레일을 놓으세요.','warn');
-      return say(r.derail.at==='A'?'탈선! x=0에서 왼쪽 레일 끝(높이 4)과 새 레일의 시작 높이가 달라요.':'탈선! x=4에서 새 레일의 끝 높이와 오른쪽 레일 시작(높이 3/2)이 달라요.','warn');}
+      return say(r.derail.at==='A'?'탈선! x=0에서 왼쪽 레일 끝(높이 2)과 새 레일의 시작 높이가 달라요.':'탈선! x=2에서 새 레일의 끝 높이와 오른쪽 레일 시작(높이 4)이 달라요.','warn');}
     if(!S.done.m1){S.done.m1=true;save();renderMission();say('열차가 끊긴 구간을 지나갔어요! 그런데 연결점에서 덜컹거렸어요. 운행 기록을 확인해 보세요.','ok');}
     return;}
   if(mission===2){if(!r.derail){const was=allTried();S.m2.tried[S.m2.cand]=true;save();
@@ -462,11 +466,14 @@ function onRun(r){
   if(mission===3){
     if(r.derail)return say(`탈선! ${r.derail.at}에서 높이가 맞지 않아요. 조건표를 확인하세요.`,'warn');
     if(r.jolts.length)return say(`${r.jolts.map(j=>j.at).join(', ')}에서 덜컹거렸어요. 기울기 조건을 확인하세요.`,'warn');
-    if(exactOK()){if(!S.done.m3){S.done.m3=true;save();renderMission();say('완벽해요! 열차가 탈선도, 덜컹거림도 없이 매끄럽게 지나갔어요.','ok');}return;}
-    return say('거의 매끄럽게 지나갔어요! 하지만 조건표를 보면 정확히 맞지는 않아요. 작은 오차도 쌓이면 위험해요. 식으로 정확한 계수를 구해 보세요.','warn');}
+    if(exactOK()){S.m3.ranSmooth=true;save();checkM3();return;}
+    return say('거의 매끄럽게 지나갔어요! 하지만 조건표를 보면 정확히 맞지는 않아요. 작은 오차도 쌓이면 위험해요. 조건을 식으로 세워 정확한 계수를 구해 보세요.','warn');}
 }
 const allTried=()=>S.m2.tried.line&&S.m2.tried.quad&&S.m2.tried.cubic;
-function exactOK(){const m=S.m3;if(!m.useInput)return false;const d=liveCubic();return same(fD(d,0),4)&&same(sD(d,0),SA)&&same(fD(d,4),1.5)&&same(sD(d,4),SB);}
+function checkM3(){if(S.done.m3)return;if(!(exactOK()&&S.m3.ranSmooth)){renderMission();return;}
+  if(S.m3.fp!=='B'){renderMission();say('매끄럽게 지나갔어요! 아래의 f′(x) 질문에도 답하면 미션이 해결돼요.','ok');return;}
+  S.done.m3=true;save();renderMission();say('완벽해요! 열차가 탈선도, 덜컹거림도 없이 매끄럽게 지나갔어요.','ok');}
+function exactOK(){const d=liveCubic();return same(fD(d,0),2)&&same(sD(d,0),SA)&&same(fD(d,L),4)&&same(sD(d,L),SB);}
 
 /* ---------- 공통 UI ---------- */
 const toast=$('toast');let toastT=null;
@@ -495,19 +502,19 @@ async function submitStage(key){
   S.submitted[key]=Date.now();save();
   const ok=await forceSync();
   if(!ok){S.submitted[key]=0;save();if(b){b.disabled=false;b.textContent='다시 제출하기';}
-    say(API?'제출하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.':'서버에 연결되지 않아 제출할 수 없어요. 선생님께 알려 주세요.','warn');return;}
+    say(API?'제출하지 못했어요: '+errText(lastErr)+'. 선생님께 이 문구를 알려 주세요.':'서버 주소가 설정되지 않아 제출할 수 없어요. 선생님께 알려 주세요.','warn');return;}
   if(key==='final'){showDone('제출 완료','느낀 점까지 모두 제출했어요. 수고했어요!');renderMission();return;}
   const m=+key;showDone('제출 완료',`미션 ${m}의 답을 제출했어요. ${NEXT[m]} 넘어갈게요.`);
   setTimeout(()=>{setMission(m+1);const pn=document.querySelector('.panel');if(pn)pn.scrollIntoView({behavior:'smooth',block:'start'});},1200);
 }
 
 /* ---------- 미션 1: 직선으로 잇기 ---------- */
-const H1=['새 레일은 A와 B를 지나야 해요. 설계 도면에서 A, B의 좌표를 찾아보세요.','두 점을 지나는 직선의 기울기는 (y의 증가량)/(x의 증가량)이에요.','A(0, 4)를 지나니 y절편 q는 4예요. 기울기 p는 (3/2 − 4) ÷ (4 − 0)을 계산해 보세요.'];
+const H1=['새 레일은 A와 B를 지나야 해요. 설계 도면에서 A, B의 좌표를 찾아보세요.','두 점을 지나는 직선의 기울기는 (y의 증가량)/(x의 증가량)이에요.','A(0, 2)를 지나니 y절편 q는 2예요. 기울기 p는 (4 − 2) ÷ (2 − 0)을 계산해 보세요.'];
 function rm1(pane){const m=S.m1;
   pane.innerHTML=`<div style="display:flex;flex-direction:column;gap:12px">
    <h2>끊긴 레일을 직선으로 이어라</h2>
-   <p class="goal">우선 끊긴 구간(0 ≤ x ≤ 4)을 직선 레일 하나로 이어서, 열차가 끊긴 구간을 지나가게 하세요.</p>
-   <p class="rule">새 레일의 식 y = px + q 의 p와 q를 정해 ‘레일 놓기’를 누른 뒤, 아래의 ‘열차 출발’로 확인하세요. 분수는 3/2처럼 써요.</p>
+   <p class="goal">우선 끊긴 구간(0 ≤ x ≤ 2)을 직선 레일 하나로 이어서, 열차가 끊긴 구간을 지나가게 하세요.</p>
+   <p class="rule">새 레일의 식 y = px + q 의 p와 q를 정해 ‘레일 놓기’를 누른 뒤, 아래의 ‘열차 출발’로 확인하세요.</p>
    ${statusHTML([['열차가 끊긴 구간을 무사히 지나갔다',S.done.m1]])}
    <div class="eq">y = <input id="inP" value="${esc(m.p)}" aria-label="기울기 p" placeholder="p"> x + <input id="inQ" value="${esc(m.q)}" aria-label="y절편 q" placeholder="q"> <button class="btn" id="bPlace">레일 놓기</button></div>
    <p class="note" id="m1msg"></p>
@@ -517,7 +524,7 @@ function rm1(pane){const m=S.m1;
    ${submitHTML(1)}</div>`;
   $('inP').oninput=e=>{m.p=e.target.value;save();};$('inQ').oninput=e=>{m.q=e.target.value;save();};
   $('bPlace').onclick=()=>{const p=parseNum(m.p),q=parseNum(m.q);
-    if(!isFinite(p)||!isFinite(q)){$('m1msg').textContent='p와 q에 수를 입력하세요. 분수는 3/2처럼 써요.';return;}
+    if(!isFinite(p)||!isFinite(q)){$('m1msg').textContent='p와 q에 수를 입력하세요.';return;}
     m.pv=p;m.qv=q;m.placed=true;m.tries++;save();renderTrack();$('m1msg').textContent=`y = ${nfmt(p)}x + ${nfmt(q)} 레일을 놓았어요. ‘열차 출발’로 확인해 보세요.`;};
   bindHints(pane);noteSubmit(1);}
 
@@ -526,7 +533,7 @@ const Q21=[['height','두 레일의 높이'],['curve','새 레일이 곡선인�
 const F21={slope:['ok','맞아요. 덜컹거린 연결점은 아무리 확대해도 꺾여 있었어요. 두 레일의 기울기가 달랐기 때문이에요.'],
   height:['no','높이가 다르면 열차가 탈선했지요. 세 레일 모두 높이는 맞았는데도 덜컹거린 곳이 있었어요. 확대경으로 다시 보세요.'],
   curve:['no','(나)는 곡선인데도 B에서 덜컹거렸어요. 곡선이냐 직선이냐보다, 연결점에서 무엇이 달랐는지 확대해서 보세요.']};
-const CONDS=[['f0','f(0) = 4',true],['f4','f(4) = 3/2',true],['s0','f′(0) = −9/8',true],['s4','f′(4) = 15/8',true],['s2','f′(2) = 0',false],['f2','f(2) = 2',false]];
+const CONDS=[['f0','f(0) = 2',true],['f2','f(2) = 4',true],['s0','f′(0) = −1',true],['s2','f′(2) = 7',true],['s1','f′(1) = 0',false],['f1','f(1) = 3',false]];
 const Q22=[['1','1차함수 y = px + q'],['2','2차함수 y = ax² + bx + c'],['3','3차함수 y = ax³ + bx² + cx + d']];
 const F22={'3':['ok',''],'1':['no','직선은 기울기가 하나뿐이라서 A와 B의 서로 다른 기울기를 함께 맞출 수 없어요. 미션 1의 직선이 그랬지요.'],
   '2':['no','2차함수에서 정할 수 있는 수(계수)는 a, b, c 세 개예요. 조건은 네 개인데 모두 맞출 수 있을까요? (나) 레일을 떠올려 보세요.']};
@@ -537,7 +544,7 @@ function rm2(pane){const W=S.m2;
    <p class="goal">설계팀이 새 레일 후보 세 개를 보내왔어요. 하나씩 달려 보고, 덜컹거림의 원인을 찾아보세요.</p>
    ${statusHTML([['세 후보 레일을 모두 시험 운행했다',s2],['덜컹거림의 원인을 찾았다',W.q1==='slope'],['원인을 내 말로 설명했다',W.explained],['새 레일이 만족해야 할 조건을 찾았다',W.condOK],['필요한 함수의 차수를 찾았다',S.done.m2]])}
    <div class="wstep"><h3>① 시험 운행</h3>
-     <p>후보를 고르고 ‘열차 출발’을 눌러요. 운행 뒤에는 ‘A 확대’, ‘B 확대’로 연결점을 크게 보고, 배율도 높여 보세요.</p>
+     <p>후보를 고르고 ‘열차 출발’을 눌러요. 운행 뒤에는 ‘A 확대’, ‘B 확대’로 연결점을 크게 보세요.</p>
      <div class="choices">${Object.keys(CAND).map(k=>`<button class="choice${W.cand===k?' on':''}" data-cand="${k}">${W.tried[k]?'✓ ':''}${CAND_NAME[k]}</button>`).join('')}</div></div>
    ${s2?`<div class="wstep"><h3>② 원인 찾기</h3><p>덜컹거린 연결점과 매끄럽게 지나간 연결점은 무엇이 달랐나요?</p>${choiceHTML(Q21,'q1',W.q1,F21)}</div>`:''}
    ${s3?`<div class="wstep"><h3>③ 내 말로 설명하기</h3><p>열차가 덜컹거리지 않고 지나가려면 연결점에서 두 레일이 어떠해야 할까요? 확대경으로 본 것을 근거로 설명해 보세요.</p>
@@ -565,79 +572,75 @@ function rm2(pane){const W=S.m2;
   wireSubmit(2,()=>[S.done.m2,'']);}
 
 /* ---------- 미션 3: 3차함수 레일 설계 ---------- */
-const H3=['조건 f(0) = 4에 x = 0을 넣어 보세요. a, b, c가 모두 사라지고 d만 남아요.','f′(x) = 3ax² + 2bx + c 이므로 f′(0) = c 예요. 이제 a, b만 남았어요.','f(4) = 64a + 16b + 4c + d = 3/2, f′(4) = 48a + 8b + c = 15/8 에 c, d 값을 넣으면 a, b에 대한 연립방정식이 돼요.'];
+const H3=['조건 f(0) = 2에 x = 0을 넣어 보세요. a, b, c가 모두 사라지고 d만 남아요.','f′(x) = 3ax² + 2bx + c 이므로 f′(0) = c 예요. 이제 a, b만 남았어요.','f(2) = 8a + 4b + 2c + d = 4, f′(2) = 12a + 4b + c = 7 에 c, d 값을 넣으면 a, b에 대한 연립방정식이 돼요.'];
 const Q3=[['A','f′(x) = ax² + bx + c'],['B','f′(x) = 3ax² + 2bx + c'],['C','f′(x) = 3ax² + 2bx + c + d']];
-const F3={B:['ok','맞아요. 이제 네 조건을 a, b, c, d에 대한 식으로 써 보세요.'],A:['no','xⁿ을 미분하면 nxⁿ⁻¹ 이에요. x³을 미분하면?'],C:['no','상수 d를 미분하면 0이에요.']};
-function condRows(d){const rows=[['f(0)',fD(d,0),4,'4'],['f′(0)',sD(d,0),SA,'−9/8'],['f(4)',fD(d,4),1.5,'3/2'],['f′(4)',sD(d,4),SB,'15/8']];
+const F3={B:['ok','맞아요. 이제 네 조건을 a, b, c, d에 대한 식으로 세워 풀어 보세요.'],A:['no','xⁿ을 미분하면 nxⁿ⁻¹ 이에요. x³을 미분하면?'],C:['no','상수 d를 미분하면 0이에요.']};
+function condRows(d){const rows=[['f(0)',fD(d,0),2,'2'],['f′(0)',sD(d,0),SA,'−1'],['f(2)',fD(d,L),4,'4'],['f′(2)',sD(d,L),SB,'7']];
   return `<table class="cond"><tr><th>조건</th><th>지금 값</th><th>목표</th><th></th></tr>${rows.map(([n,v,t,ts])=>`<tr><td>${n}</td><td>${nfmt(v)}</td><td>${ts}</td><td class="${same(v,t)?'okc':'noc'}">${same(v,t)?'✓':'✗'}</td></tr>`).join('')}</table>`;}
+const SL={a:[-3,3],b:[-3,3],c:[-3,3],d:[0,6]};
 function rm3(pane){const m=S.m3;
-  const sl=(k,min,max)=>`<label class="slider"><span>${k}</span><input type="range" data-sl="${k}" min="${min}" max="${max}" step="0.05" value="${m[k]}"><output id="o_${k}">${nfmt(m[k])}</output></label>`;
+  const row=k=>`<div class="slider"><span>${k}</span><input type="range" data-sl="${k}" min="${SL[k][0]}" max="${SL[k][1]}" step="0.1" value="${m[k]}" aria-label="${k} 막대"><input class="num" data-tx="${k}" value="${esc(m['t'+k])}" inputmode="text" aria-label="${k} 값 입력"></div>`;
   pane.innerHTML=`<div style="display:flex;flex-direction:column;gap:12px">
    <h2>매끄러운 곡선 레일을 설계하라</h2>
    <p class="goal">새 레일 f(x) = ax³ + bx² + cx + d 가 미션 2에서 찾은 네 조건을 모두 만족하도록 a, b, c, d를 정하세요.</p>
-   ${statusHTML([['네 조건을 정확히 만족하는 계수를 찾았다',exactOK()],['열차가 탈선도 덜컹거림도 없이 지나갔다',S.done.m3]])}
-   <div id="condBox">${condRows(liveCubic())}</div>
-   <div class="wstep"><h3>① 손으로 맞춰 보기</h3><p>막대를 움직여 레일 모양을 바꾸고 조건표를 맞춰 보세요.</p>
-     ${sl('a',-0.5,0.5)}${sl('b',-1.5,1.5)}${sl('c',-2,2)}${sl('d',0,6)}
-     ${m.useInput?'<p class="note">지금은 ② 에서 입력한 계수로 레일이 놓여 있어요. 막대를 움직이면 막대 값으로 바뀌어요.</p>':''}</div>
-   ${m.slid>=1?`<div class="wstep"><h3>② 식으로 정확하게 구하기</h3><p>막대로는 네 조건을 정확히 맞추기 어려워요. 조건을 식으로 세워 계수를 직접 구해 봅시다. 먼저, f(x)를 미분하면?</p>
-     ${choiceHTML(Q3,'fp',m.fp,F3)}
-     ${m.fp==='B'?`<p>네 조건을 식으로 세워 풀고, 구한 계수를 입력하세요. 분수는 1/8처럼 써요.</p>
-       <div class="eq">a <input id="ia" value="${esc(m.ia)}"> b <input id="ib" value="${esc(m.ib)}"> c <input id="ic" value="${esc(m.ic)}"> d <input id="id" value="${esc(m.id)}"></div>
-       <div><button class="btn" id="bInstall">이 계수로 레일 놓기</button></div><p class="note" id="m3msg"></p>`:''}</div>`:''}
-   ${S.done.m3?`<div class="concept"><b>조건을 식으로 세우면 정확한 설계가 돼요</b>연결점의 높이 조건은 f(0), f(4), 기울기 조건은 미분계수 f′(0), f′(4)로 나타냈어요. 도함수 f′(x)를 구할 수 있었기 때문에 ‘기울기가 같다’는 조건을 식으로 바꿀 수 있었지요.</div>`:''}
+   ${statusHTML([['f′(x)를 구했다',m.fp==='B'],['네 조건을 정확히 만족하는 계수를 찾았다',exactOK()],['열차가 탈선도 덜컹거림도 없이 지나갔다',S.done.m3]])}
+   <div class="wstep"><h3>① 미분하기</h3><p>기울기 조건을 식으로 나타내려면 f′(x)가 필요해요. f(x) = ax³ + bx² + cx + d 를 미분하면?</p>
+     ${choiceHTML(Q3,'fp',m.fp,F3)}</div>
+   <div class="wstep"><h3>② 계수 정하기</h3><p>막대를 움직여 보거나, 오른쪽 칸에 값을 직접 입력하세요. 레일과 조건표가 바로 바뀌어요. 다 맞으면 ‘열차 출발’로 확인하세요.</p>
+     <div id="condBox">${condRows(liveCubic())}</div>
+     ${row('a')}${row('b')}${row('c')}${row('d')}
+     <p class="note" id="m3msg"></p></div>
+   ${S.done.m3?`<div class="concept"><b>조건을 식으로 세우면 정확한 설계가 돼요</b>연결점의 높이 조건은 f(0), f(2), 기울기 조건은 미분계수 f′(0), f′(2)로 나타냈어요. 도함수 f′(x)를 구할 수 있었기 때문에 ‘기울기가 같다’는 조건을 식으로 바꿀 수 있었지요.</div>`:''}
    ${hintsHTML(3,H3)}
-   ${noteHTML(3,'a, b, c, d를 어떻게 구했나요? 막대로 맞출 때와 식으로 구할 때 어떤 차이가 있었나요?')}
+   ${noteHTML(3,'a, b, c, d를 어떻게 구했나요? 어떤 식을 세웠는지 써 보세요. 막대로 맞춰 볼 때와 식으로 구할 때 어떤 차이가 있었나요?')}
    ${submitHTML(3)}</div>`;
-  pane.querySelectorAll('[data-sl]').forEach(r=>r.oninput=()=>{const k=r.dataset.sl;m[k]=Math.round(+r.value*100)/100;$('o_'+k).textContent=nfmt(m[k]);
-    const wasInput=m.useInput;m.useInput=false;const first=!m.slid;m.slid++;save();renderTrack();$('condBox').innerHTML=condRows(liveCubic());
-    if(first||wasInput)r.dataset.rerender='1';if(m.slid===25)say('막대로 네 조건을 모두 정확히 맞추기 어렵지요? 조건을 식으로 세워 보세요.','warn');});
-  pane.querySelectorAll('[data-sl]').forEach(r=>r.onchange=()=>{if(r.dataset.rerender==='1'){r.dataset.rerender='';renderMission();}});
-  bindChoices(pane,'fp',v=>{if(m.fp==='B')return;m.fp=v;m.fpTries++;save();renderMission();});
-  ['ia','ib','ic','id'].forEach(k=>{const i=$(k);if(i)i.oninput=()=>{m[k]=i.value;save();};});
-  const bi=$('bInstall');if(bi)bi.onclick=()=>{const v=[m.ia,m.ib,m.ic,m.id].map(parseNum);
-    if(!v.every(isFinite)){$('m3msg').textContent='a, b, c, d에 모두 수를 입력하세요. 분수는 1/8처럼 써요.';return;}
-    m.useInput=true;m.tries++;save();renderTrack();renderMission();
-    say(exactOK()?'네 조건이 모두 맞았어요! ‘열차 출발’로 확인해 보세요.':'조건표에서 ✗인 조건을 확인하고, 식을 다시 살펴보세요.',exactOK()?'ok':'warn');};
+  const refresh=()=>{renderTrack();$('condBox').innerHTML=condRows(liveCubic());};
+  pane.querySelectorAll('[data-sl]').forEach(r=>r.oninput=()=>{const k=r.dataset.sl;m[k]=Math.round(+r.value*10)/10;m['t'+k]=String(m[k]);
+    const t=pane.querySelector(`[data-tx="${k}"]`);t.value=m['t'+k];t.style.borderColor='';m.slid++;m.ranSmooth=false;save();refresh();});
+  pane.querySelectorAll('[data-tx]').forEach(t=>t.oninput=()=>{const k=t.dataset.tx;m['t'+k]=t.value;const v=parseNum(t.value);
+    if(!isFinite(v)){t.style.borderColor='var(--red)';$('m3msg').textContent='수를 입력하세요. 분수는 1/2처럼, 음수는 -1처럼 써요.';save();return;}
+    t.style.borderColor='';$('m3msg').textContent='';m[k]=v;m.typed++;m.ranSmooth=false;
+    const r=pane.querySelector(`[data-sl="${k}"]`);r.value=Math.max(SL[k][0],Math.min(SL[k][1],v));save();refresh();});
+  bindChoices(pane,'fp',v=>{if(m.fp==='B')return;m.fp=v;m.fpTries++;save();if(v==='B')checkM3();else renderMission();});
   bindHints(pane);noteSubmit(3);}
 
 /* ---------- 미션 4: 안전 점검 ---------- */
-const Q41=[['yes','x = 3 근처가 가장 낮고, 0.5보다 높아 보이니 안전하다고 확신할 수 있다'],['no','눈으로만 봐서는 확신할 수 없다']];
-const F41={no:['ok','맞아요. 가장 낮은 곳이 0.5와 1 사이 어딘가로 보이지만, 정확한 위치와 높이는 계산해야 알 수 있어요. 먼저 접선을 움직여 가장 낮은 곳의 특징을 찾아봅시다.'],
-  yes:['no','격자로 보면 0.5와 1 사이 어딘가예요. 0.5에 아주 가까울 수도 있는데, 눈대중만으로 승객의 안전을 장담할 수 있을까요?']};
+const Q41=[['yes','x = 1 근처가 가장 낮고, 기준선 위에 있어 보이니 안전하다고 확신할 수 있다'],['no','눈으로만 봐서는 확신할 수 없다']];
+const F41={no:['ok','맞아요. 가장 낮은 곳이 기준선에 닿을 듯 말 듯해서, 아주 조금이라도 아래로 내려가는지 눈으로는 알 수 없어요. 먼저 접선을 움직여 가장 낮은 곳의 특징을 찾아봅시다.'],
+  yes:['no','가장 낮은 곳이 기준선에 거의 닿아 있어요. 기준보다 아주 조금이라도 낮다면 위험한데, 눈대중만으로 승객의 안전을 장담할 수 있을까요?']};
 const Q42=[['down','오른쪽 아래로 기운다'],['flat','수평이다 (기울기가 0)'],['up','오른쪽 위로 기운다']];
 const F42={flat:['ok','맞아요. 가장 낮은 지점에서 접선은 수평이에요. 즉 그곳에서 미분계수가 0이에요.'],down:['no','접선이 오른쪽 아래로 기울어 있다면 조금 더 오른쪽으로 가면 더 낮아져요. 그곳이 가장 낮을까요?'],up:['no','접선이 오른쪽 위로 기울어 있다면 조금 왼쪽으로 가면 더 낮아져요. 그곳이 가장 낮을까요?']};
 const Q43=[['safe','안전하다'],['danger','위험하다']];
-const F43={safe:['ok',''],danger:['no','가장 낮은 높이 5/8과 기준 1/2을 비교해 보세요. 어느 쪽이 더 큰가요?']};
-const H4=['가장 낮은 지점에서는 접선의 기울기가 0이에요. f′(x) = 0 인 x를 찾아보세요.','f′(x) = (3/8)x² − (3/4)x − 9/8 이에요. 양변에 8/3을 곱하면 더 간단해져요.','x² − 2x − 3 = 0 → (x − 3)(x + 1) = 0. 새 구간 0 ≤ x ≤ 4 안에 있는 해는? 그 x를 f(x)에 넣어 높이를 구하세요.'];
+const F43={safe:['ok',''],danger:['no','가장 낮은 높이 1과 기준 ‘1칸 이상’을 비교해 보세요. ‘이상’은 같은 경우도 포함해요.']};
+const H4=['가장 낮은 지점에서는 접선의 기울기가 0이에요. f′(x) = 0 인 x를 찾아보세요.','f′(x) = 3x² − 2x − 1 이에요. 인수분해해 보세요.','3x² − 2x − 1 = (3x + 1)(x − 1) = 0. 새 구간 0 ≤ x ≤ 2 안에 있는 해는? 그 x를 f(x)에 넣어 높이를 구하세요.'];
 function rm4(pane){const m=S.m4;
   if(!S.done.m3){pane.innerHTML=`<div style="display:flex;flex-direction:column;gap:12px"><h2>안전 점검</h2><p class="goal">미션 3에서 곡선 레일 설계를 먼저 끝내야 안전 점검을 할 수 있어요.</p><div><button class="btn" id="bGo3">미션 3으로 가기</button></div></div>`;$('bGo3').onclick=()=>setMission(3);return;}
   const s2=m.q1==='no',s3=s2&&m.q2==='flat',s4=s3&&m.xyOK;
   pane.innerHTML=`<div style="display:flex;flex-direction:column;gap:12px">
    <h2>새 레일은 안전할까?</h2>
-   <p class="goal">놀이공원 안전 규정: <b>레일의 모든 지점은 지면에서 0.5칸(5 m) 이상 높아야 해요.</b> 미션 3에서 설계한 레일 f(x) = (1/8)x³ − (3/8)x² − (9/8)x + 4 가 이 규정을 지키는지 점검하세요.</p>
+   <p class="goal">놀이공원 안전 규정: <b>레일의 모든 지점은 지면에서 1칸(5 m) 이상 높아야 해요.</b> 미션 3에서 설계한 레일 f(x) = x³ − x² − x + 2 가 이 규정을 지키는지 점검하세요.</p>
    ${statusHTML([['가장 낮은 지점의 특징을 찾았다',m.q2==='flat'],['가장 낮은 지점의 위치와 높이를 구했다',m.xyOK],['안전 여부를 판정했다',S.done.m4]])}
-   <div class="wstep"><h3>① 눈으로 보기</h3><p>작업판의 빨간 점선이 안전 기준(높이 0.5)이에요. 그래프만 보고 판정할 수 있을까요?</p>${choiceHTML(Q41,'q1',m.q1,F41)}</div>
+   <div class="wstep"><h3>① 눈으로 보기</h3><p>작업판의 빨간 점선이 안전 기준(높이 1)이에요. 그래프만 보고 판정할 수 있을까요?</p>${choiceHTML(Q41,'q1',m.q1,F41)}</div>
    ${s2?`<div class="wstep"><h3>② 접선 움직여 보기</h3><p>막대로 접선의 위치를 옮기며, 레일이 가장 낮은 곳에서 접선이 어떤 모양인지 관찰하세요.</p>
-     <label class="slider"><span>x</span><input type="range" id="tanR" min="0" max="4" step="0.1" value="${m.tx}"><output id="tanO">${m.tx.toFixed(1)}</output></label>
+     <label class="slider"><span>x</span><input type="range" id="tanR" min="0" max="2" step="0.05" value="${m.tx}"><output id="tanO">${m.tx.toFixed(2)}</output></label>
      <p>가장 낮은 지점에서 접선은 어떤 모양인가요?</p>${choiceHTML(Q42,'q2',m.q2,F42)}</div>`:''}
    ${s3?`<div class="wstep"><h3>③ 계산으로 찾기</h3><p>가장 낮은 지점의 x좌표와 그 높이를 계산해서 입력하세요.</p>
      <div class="eq">x = <input id="lx" value="${esc(m.x)}"> 높이 f(x) = <input id="ly" value="${esc(m.y)}"> <button class="btn" id="bXY" ${m.xyOK?'disabled':''}>확인</button></div>
-     <p class="fb ${m.xyOK?'ok':'no'}" id="xyFb" ${m.xyTries&&!m.xyOK||m.xyOK?'':'hidden'}>${m.xyOK?'맞아요. 가장 낮은 지점은 (3, 5/8)이에요. 작업판에 빨간 점으로 표시했어요.':''}</p>
+     <p class="fb ${m.xyOK?'ok':'no'}" id="xyFb" ${m.xyOK?'':'hidden'}>${m.xyOK?'맞아요. 가장 낮은 지점은 (1, 1)이에요. 작업판에 빨간 원으로 표시했어요.':''}</p>
      ${m.xyOK?'':hintsHTML(4,H4)}</div>`:''}
    ${s4?`<div class="wstep"><h3>④ 판정하기</h3><p>새 레일은 안전 규정을 지키나요?</p>${choiceHTML(Q43,'judge',m.judge,F43)}
-     ${m.judge==='safe'?`<div class="concept"><b>도함수가 0인 곳에서 찾은 가장 낮은 지점</b>f′(x)의 부호가 x = 3을 지나며 −에서 +로 바뀌어요. 레일이 내려가다가 x = 3에서 수평이 되고 다시 올라가니, f(3) = 5/8 이 <strong>극솟값</strong>이에요. 양 끝의 높이 f(0) = 4, f(4) = 3/2 보다도 낮으니 새 구간에서 가장 낮은 높이예요. 5/8 > 1/2 이므로 <strong>안전</strong>해요.</div>`:''}</div>`:''}
-   ${noteHTML(4,'가장 낮은 지점을 어떻게 찾았나요? 그곳이 가장 낮다고 말할 수 있는 까닭은? 눈으로만 판정했다면 어떤 문제가 있었을까요?')}
+     ${m.judge==='safe'?`<div class="concept"><b>도함수가 0인 곳에서 찾은 가장 낮은 지점</b>f′(x) = (3x + 1)(x − 1)의 부호가 x = 1을 지나며 −에서 +로 바뀌어요. 레일이 내려가다가 x = 1에서 수평이 되고 다시 올라가니, f(1) = 1 이 <strong>극솟값</strong>이에요. 양 끝의 높이 f(0) = 2, f(2) = 4 보다도 낮으니 새 구간에서 가장 낮은 높이예요.<br><br>가장 낮은 높이 1은 기준 ‘1칸 이상’을 만족하므로 <strong>안전</strong>해요. 그런데 여유가 전혀 없어요. 실제 공사라면 어떻게 하는 게 좋을까요?</div>`:''}</div>`:''}
+   ${noteHTML(4,'가장 낮은 지점을 어떻게 찾았나요? 그곳이 가장 낮다고 말할 수 있는 까닭은? 기준과 딱 맞는 이 설계를 실제로 쓴다면 어떤 점을 더 생각해야 할까요?')}
    ${submitHTML(4)}</div>`;
   bindChoices(pane,'q1',v=>{if(m.q1==='no')return;m.q1=v;m.q1Tries++;save();renderMission();renderTrack();});
-  const tr=$('tanR');if(tr)tr.oninput=()=>{m.tx=+tr.value;m.tanUsed=true;$('tanO').textContent=m.tx.toFixed(1);drawTangent();save();};
+  const tr=$('tanR');if(tr)tr.oninput=()=>{m.tx=+tr.value;m.tanUsed=true;$('tanO').textContent=m.tx.toFixed(2);drawTangent();save();};
   bindChoices(pane,'q2',v=>{if(m.q2==='flat')return;if(!m.tanUsed){say('먼저 막대로 접선을 움직여 보세요.','warn');return;}m.q2=v;m.q2Tries++;save();renderMission();});
   ['lx','ly'].forEach(k=>{const i=$(k);if(i)i.oninput=()=>{m[k==='lx'?'x':'y']=i.value;save();};});
-  const bx=$('bXY');if(bx)bx.onclick=()=>{const x=parseNum(m.x),y=parseNum(m.y);m.xyTries++;const fb=$('xyFb');fb.hidden=false;
-    if(!isFinite(x)||!isFinite(y)){fb.textContent='x와 높이에 수를 입력하세요. 분수는 5/8처럼 써요.';save();return;}
-    if(same(x,-1)){fb.textContent='x = −1은 새 레일 구간(0 ≤ x ≤ 4) 밖이에요.';save();return;}
-    if(!same(x,3)){fb.textContent=`x = ${nfmt(x)}에서 f′(x)는 ${nfmt(sD(TRUE,x))}이에요. 0이 아니니 접선이 수평이 아니에요. f′(x) = 0을 다시 풀어 보세요.`;save();return;}
-    if(!same(y,5/8)){fb.textContent='x 좌표는 맞았어요! f(3)을 다시 계산해 보세요.';save();return;}
+  const bx=$('bXY');if(bx)bx.onclick=()=>{const x=parseNum(m.x),y=parseNum(m.y);m.xyTries++;const fb=$('xyFb');fb.hidden=false;fb.className='fb no';
+    if(!isFinite(x)||!isFinite(y)){fb.textContent='x와 높이에 수를 입력하세요.';save();return;}
+    if(same(x,-1/3)){fb.textContent='x = −1/3은 새 레일 구간(0 ≤ x ≤ 2) 밖이에요.';save();return;}
+    if(!same(x,1)){fb.textContent=`x = ${nfmt(x)}에서 f′(x)는 ${nfmt(sD(TRUE,x))}이에요. 0이 아니니 접선이 수평이 아니에요. f′(x) = 0을 다시 풀어 보세요.`;save();return;}
+    if(!same(y,1)){fb.textContent='x 좌표는 맞았어요! f(1)을 다시 계산해 보세요.';save();return;}
     m.xyOK=true;save();renderMission();renderTrack();};
   bindChoices(pane,'judge',v=>{if(m.judge==='safe')return;m.judge=v;m.judgeTries++;if(v==='safe'&&!S.done.m4){S.done.m4=true;say('미션 4 해결! 생각 노트를 쓰고 제출하세요.','ok');}save();renderMission();});
   bindHints(pane);noteSubmit(4);}
@@ -646,13 +649,14 @@ function rm4(pane){const m=S.m4;
 const ans=(q,a)=>`<div class="qa"><span>${q}</span><p>${a?esc(a):'<em>아직 답하지 않았어요</em>'}</p></div>`;
 const T=(list,k)=>{const f=list.find(x=>x[0]===k);return f?f[1]:'';};
 function badge(m){return S.submitted[m]?'<span class="tag ok">제출함</span>':S.done['m'+m]?'<span class="tag mid">해결했지만 제출 안 함</span>':'<span class="tag">아직 해결하지 않음</span>';}
+const coefText=c=>`a = ${c.ta||c.a}, b = ${c.tb||c.b}, c = ${c.tc||c.c}, d = ${c.td||c.d}`;
 function rm5(pane){const a=S.m1,b=S.m2,c=S.m3,d=S.m4;const notSub=[1,2,3,4].filter(m=>!S.submitted[m]);
   pane.innerHTML=`<div style="display:flex;flex-direction:column;gap:14px">
    <h2>정리하기</h2><p class="goal">지금까지 내가 한 답을 차례로 다시 읽어 보세요. 그리고 이를 바탕으로 느낀 점을 써 보세요.</p>
    <div class="rv"><h3>미션 1. 직선으로 잇기 ${badge(1)}</h3>${ans('내가 놓은 직선 레일',a.placed?`y = ${nfmt(a.pv)}x + ${nfmt(a.qv)}`:'')}${ans('탈선한 횟수',a.runs?a.derails+'번':'')}${ans('생각 노트',S.notes[1])}</div>
    <div class="rv"><h3>미션 2. 덜컹 이유 찾기 ${badge(2)}</h3>${ans('덜컹거림의 원인',T(Q21,b.q1))}${ans('내 설명',S.notes[2])}${ans('새 레일의 조건',b.condOK?CONDS.filter(x=>x[2]).map(x=>x[1]).join(', '):'')}${ans('필요한 함수',T(Q22,b.deg))}</div>
-   <div class="rv"><h3>미션 3. 곡선 레일 설계 ${badge(3)}</h3>${ans('내가 구한 계수',c.useInput?`a = ${c.ia}, b = ${c.ib}, c = ${c.ic}, d = ${c.id}`:'')}${ans('생각 노트',S.notes[3])}</div>
-   <div class="rv"><h3>미션 4. 안전 점검 ${badge(4)}</h3>${ans('가장 낮은 지점',d.xyOK?'(3, 5/8)':'')}${ans('판정',T(Q43,d.judge))}${ans('생각 노트',S.notes[4])}</div>
+   <div class="rv"><h3>미션 3. 곡선 레일 설계 ${badge(3)}</h3>${ans('내가 찾은 계수',S.done.m3?coefText(c):'')}${ans('생각 노트',S.notes[3])}</div>
+   <div class="rv"><h3>미션 4. 안전 점검 ${badge(4)}</h3>${ans('가장 낮은 지점',d.xyOK?'(1, 1)':'')}${ans('판정',T(Q43,d.judge))}${ans('생각 노트',S.notes[4])}</div>
    <div class="wstep"><h3>느낀 점</h3><p>위의 내 답을 바탕으로 느낀 점을 써 보세요. 새롭게 알게 된 점, 어려웠던 점, 생각이 바뀐 순간, 미분이 롤러코스터 설계에 어떻게 쓰였는지 등을 자유롭게 써도 좋아요.</p>
      <textarea id="finalNote" placeholder="예: 미션 2에서 처음에는 곡선이면 매끄러울 줄 알았는데 …">${esc(S.notes.final)}</textarea>
      ${notSub.length?`<p class="note">아직 제출하지 않은 미션: ${notSub.map(m=>'미션 '+m).join(', ')}. 해당 미션 탭에서 제출할 수 있어요.</p>`:''}
@@ -665,7 +669,7 @@ function renderMission(){
   document.querySelectorAll('.mtabs button').forEach(b=>{const m=+b.dataset.m;b.setAttribute('aria-current',m===mission?'true':'false');b.classList.toggle('done',m<5?!!S.done['m'+m]:!!S.submitted.final);});
   const pane=$('mpane');({1:rm1,2:rm2,3:rm3,4:rm4,5:rm5})[mission](pane);
 }
-function setMission(m){mission=m;renderMission();renderTrack();$('runlog').textContent='‘열차 출발’을 누르면 운행 기록이 여기에 남아요.';}
+function setMission(m){mission=m;toast.textContent='';renderMission();renderTrack();$('runlog').textContent='‘열차 출발’을 누르면 운행 기록이 여기에 남아요.';}
 document.querySelectorAll('.mtabs button').forEach(b=>b.onclick=()=>setMission(+b.dataset.m));
 $('resetAll').onclick=()=>{if(!confirm('이 기기에 저장된 모든 활동이 지워지고 처음부터 시작해요. 이미 제출한 기록은 선생님께 남아 있어요. 계속할까요?'))return;S=fresh();save();setMission(1);};
 
@@ -676,28 +680,33 @@ function summary(){const a=S.m1,b=S.m2,c=S.m3,d=S.m4;
     '직선 레일(학생 입력)':a.placed?`y = (${a.p})x + (${a.q})`:'','레일 놓기 횟수':a.tries,'탈선 횟수':a.derails,
     '시험한 후보':Object.keys(CAND).filter(k=>b.tried[k]).map(k=>CAND_NAME[k]).join(', '),'덜컹 원인 답':T(Q21,b.q1),'원인 시도 수':b.q1Tries,'덜컹 원인 설명':S.notes[2],
     '조건 고르기 시도 수':b.condTries,'필요한 함수 답':T(Q22,b.deg),'함수 시도 수':b.degTries,
-    '막대 조작 횟수':c.slid,'f′(x) 답':T(Q3,c.fp),'f′(x) 시도 수':c.fpTries,'입력한 계수':c.useInput||c.ia?`a=${c.ia}, b=${c.ib}, c=${c.ic}, d=${c.id}`:'','계수 입력 횟수':c.tries,
+    '막대 조작 횟수':c.slid,'직접 입력 횟수':c.typed,'f′(x) 답':T(Q3,c.fp),'f′(x) 시도 수':c.fpTries,'마지막 계수':coefText(c),
     '눈대중 질문 답':T(Q41,d.q1),'접선 질문 답':T(Q42,d.q2),'최저점 입력':d.x||d.y?`x=${d.x}, 높이=${d.y}`:'','최저점 시도 수':d.xyTries,'안전 판정':T(Q43,d.judge),
     '힌트 수(미션1)':S.hints[1]||0,'힌트 수(미션3)':S.hints[3]||0,'힌트 수(미션4)':S.hints[4]||0,
     '생각 노트(미션1)':S.notes[1],'생각 노트(미션3)':S.notes[3],'생각 노트(미션4)':S.notes[4],'느낀 점':S.notes.final,'느낀 점 제출':S.submitted.final?'제출':''};}
 
 /* ---------- 서버 통신 ---------- */
 const API=(typeof API_URL==='string'?API_URL:'').trim();
+function apiErr(code){const e=new Error(code);e.code=code;return e;}
 async function api(action,payload){
-  const res=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action},payload||{}))});
-  if(!res.ok)throw new Error('http_'+res.status);
-  const data=await res.json();if(!data.ok){const e=new Error(data.error||'server_error');e.code=data.error;throw e;}return data;}
+  let res;try{res=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action},payload||{}))});}
+  catch(e){throw apiErr(navigator.onLine===false?'offline':'network');}
+  if(!res.ok)throw apiErr('http_'+res.status);
+  let data;try{data=await res.json();}catch(e){throw apiErr('not_json');}
+  if(!data.ok)throw apiErr(data.error||'server_error');return data;}
+function errText(code){return({offline:'인터넷에 연결되어 있지 않아요',network:'서버에 접속할 수 없어요. Apps Script 웹 앱의 액세스 권한이 “모든 사용자”인지 확인하세요',not_json:'서버가 예상과 다른 응답을 보냈어요. Code.gs를 붙여 넣고 새 버전으로 배포했는지 확인하세요',server_error:'서버 코드에서 오류가 났어요',bad_student_no:'학번 형식이 맞지 않아요',bad_name:'이름 형식이 맞지 않아요'})[code]||('서버 오류 ('+code+')');}
+let lastErr='';
 const cloud={writing:false,dirty:false,timer:null,fails:0};
-function setSync(st){const map={off:['서버 주소가 설정되지 않아 이 기기에만 저장돼요','err'],pending:['저장 대기 중…',''],saving:['저장 중…',''],saved:['선생님께 저장됨 ✓','ok'],error:['저장하지 못했어요. 인터넷 연결을 확인하세요','err']};
+function setSync(st){const map={off:['서버 주소가 설정되지 않아 이 기기에만 저장돼요','err'],pending:['저장 대기 중…',''],saving:['저장 중…',''],saved:['선생님께 저장됨 ✓','ok'],error:['저장하지 못했어요: '+errText(lastErr),'err']};
   const[t,c]=map[st]||['',''];const e=$('syncState');e.textContent=ME?t:'';e.className='sync'+(c?' '+c:'');}
 const makeRecord=()=>JSON.parse(JSON.stringify({no:ME.no,name:ME.name,summary:summary(),state:S}));
 function queueSync(){if(!ME)return;if(!API){setSync('off');return;}cloud.dirty=true;setSync('pending');clearTimeout(cloud.timer);cloud.timer=setTimeout(flush,2000);}
 async function flush(){if(cloud.writing||!cloud.dirty||!ME||!API)return;cloud.writing=true;cloud.dirty=false;setSync('saving');
   try{await api('save',{record:makeRecord()});cloud.fails=0;setSync('saved');}
-  catch(e){cloud.dirty=true;cloud.fails++;setSync('error');cloud.writing=false;setTimeout(flush,Math.min(60000,4000*cloud.fails));return;}
+  catch(e){lastErr=e.code||'network';cloud.dirty=true;cloud.fails++;setSync('error');cloud.writing=false;setTimeout(flush,Math.min(60000,4000*cloud.fails));return;}
   cloud.writing=false;if(cloud.dirty)flush();}
 async function forceSync(){if(!ME||!API)return false;clearTimeout(cloud.timer);for(let i=0;i<60&&cloud.writing;i++)await new Promise(r=>setTimeout(r,100));
-  cloud.writing=true;setSync('saving');try{await api('save',{record:makeRecord()});cloud.dirty=false;setSync('saved');return true;}catch(e){cloud.dirty=true;setSync('error');return false;}finally{cloud.writing=false;}}
+  cloud.writing=true;setSync('saving');try{await api('save',{record:makeRecord()});cloud.dirty=false;setSync('saved');return true;}catch(e){lastErr=e.code||'network';cloud.dirty=true;setSync('error');return false;}finally{cloud.writing=false;}}
 async function flushNow(){clearTimeout(cloud.timer);if(cloud.dirty&&!cloud.writing)await flush();}
 window.addEventListener('pagehide',()=>{if(cloud.dirty&&ME&&API&&navigator.sendBeacon){try{navigator.sendBeacon(API,new Blob([JSON.stringify({action:'save',record:makeRecord()})],{type:'text/plain;charset=utf-8'}));cloud.dirty=false;}catch(e){}}});
 async function pullMine(){if(!API||!ME)return;try{const{record:r}=await api('load',{no:ME.no,name:ME.name});if(!r||!r.state)return;
@@ -711,7 +720,7 @@ function showGate(){$('gate').hidden=false;$('loginErr').textContent='';try{cons
 $('loginForm').addEventListener('submit',e=>{e.preventDefault();const no=$('inNo').value.trim(),name=$('inName').value.trim().replace(/\s+/g,' ');
   if(!/^\d{5}$/.test(no)){$('loginErr').textContent='학번은 숫자 5자리로 입력하세요.';$('inNo').focus();return;}
   if(!name){$('loginErr').textContent='이름을 입력하세요.';$('inName').focus();return;}login({no,name});});
-async function login(me){ME=me;try{localStorage.setItem(ME_KEY,JSON.stringify(me));}catch(e){}KEY='rail-v1-'+me.no+'-'+me.name;loadLocal();
+async function login(me){ME=me;try{localStorage.setItem(ME_KEY,JSON.stringify(me));}catch(e){}KEY='rail-v2-'+me.no+'-'+me.name;loadLocal();
   $('gate').hidden=true;const b=$('meBadge');b.hidden=false;b.textContent=me.no+' '+me.name;$('switchUser').hidden=false;showStudent();setMission(1);
   say('미션 1: 끊긴 레일을 직선으로 이어 열차가 지나가게 해 보세요.');await pullMine();queueSync();}
 $('switchUser').onclick=async()=>{await flushNow();ME=null;$('meBadge').hidden=true;$('switchUser').hidden=true;$('inNo').value='';$('inName').value='';try{localStorage.removeItem(ME_KEY);}catch(e){}S=fresh();setSync('');setMission(1);showGate();};
@@ -734,7 +743,7 @@ async function loadRows(first){$('tAuthErr').textContent='';if(first)$('tStatus'
     clearInterval(tTimer);tTimer=setInterval(()=>{if(!$('teacherView').hidden)loadRows(false);},30000);}
   catch(e){if(e.code==='wrong_password'){tPw='';try{sessionStorage.removeItem('rail-tpw');}catch(_){} $('tAuth').hidden=false;$('tMain').hidden=true;$('tAuthErr').textContent='비밀번호가 맞지 않아요.';}
     else if(e.code==='password_not_set'){$('tAuth').hidden=false;$('tMain').hidden=true;$('tAuthErr').textContent='Apps Script의 TEACHER_PASSWORD를 먼저 바꿔 주세요.';}
-    else{$('tStatus').textContent='기록을 불러오지 못했어요. 인터넷 연결과 서버 주소를 확인하세요.';if(first&&$('tMain').hidden){$('tAuth').hidden=false;$('tAuthErr').textContent='서버에 연결하지 못했어요.';}}}}
+    else{const m='기록을 불러오지 못했어요: '+errText(e.code||'network');$('tStatus').textContent=m;if(first&&$('tMain').hidden){$('tAuth').hidden=false;$('tAuthErr').textContent=m;}}}}
 $('bRefresh').onclick=()=>loadRows(true);
 $('bLogout').onclick=()=>{tPw='';try{sessionStorage.removeItem('rail-tpw');}catch(e){}clearInterval(tTimer);tRows=[];tSel=null;showStudent();if(!ME)showGate();};
 $('bBackStudent').onclick=()=>{showStudent();if(!ME)showGate();};
