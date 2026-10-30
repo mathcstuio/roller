@@ -118,12 +118,12 @@ table.cond th{font-weight:500;color:var(--muted);font-size:13px}
 .qa em{color:var(--muted);font-style:normal}
 .tag{font:500 12px/1 var(--ff);padding:4px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
 .tag.ok{border-color:var(--c1);color:var(--c1)} .tag.mid{border-color:var(--c3);color:var(--c3)}
-.donemsg{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:20px;background:color-mix(in srgb,var(--bg) 55%,transparent);cursor:pointer}
+.donemsg{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.25);background:color-mix(in srgb,var(--bg) 55%,transparent);cursor:pointer}
 .donecard{background:var(--surface);border:2px solid var(--c1);border-radius:20px;padding:22px 26px;max-width:380px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.18);animation:fade .25s ease-out both}
 .donecard b{display:block;font-family:"Gowun Batang",serif;font-size:24px;color:var(--c1);margin-bottom:6px}
 .donecard b::before{content:"✓ "}
 .donecard p{margin:0;font-size:16px}
-.gate{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.gate{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .gatecard{width:min(420px,100%);background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:26px 24px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 50px rgba(0,0,0,.15)}
 .gatecard h2{font-size:26px}
 .field{display:flex;flex-direction:column;gap:4px;font-size:14.5px;font-weight:500}
@@ -155,6 +155,32 @@ td.ok{color:var(--c1);font-weight:700} td.mid{color:var(--c3);font-weight:500} t
 .detail dd{margin:2px 0 0;white-space:pre-wrap;font-size:15px}
 .empty{padding:28px;text-align:center;color:var(--muted)}
 [hidden]{display:none!important}
+/* ---- 휴대폰·태블릿 대응 ---- */
+.grid > *{min-width:0}
+textarea,.tbar input{font-size:16px}
+@media (max-width: 959px), (max-height: 760px){
+  header{margin-bottom:8px}
+  h1{font-size:clamp(22px,6vw,30px)}
+  .sub{display:none}
+}
+@media (max-width: 959px){
+  .work{position:sticky;top:0;z-index:6;background:var(--bg);padding:env(safe-area-inset-top,0px) 0 6px;gap:6px}
+  body.typing .work{position:static}
+  .tool,.check,.seg button{white-space:nowrap}
+  .check{flex:none}
+  .toast{font-size:13px;padding:7px 10px;left:8px;right:8px;bottom:8px}
+  .stage{width:min(100%, 52vh);width:min(100%, 52dvh);margin:0 auto}
+}
+#scene{max-height:calc(100vh - 170px);max-height:calc(100dvh - 170px)}
+@media (max-width: 959px){
+  .ctrls{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .ctrls::-webkit-scrollbar{display:none}
+  .ctrls > *{flex:none}
+  .btn.run{padding:8px 14px}
+  .runlog{font-size:13px;padding:6px 10px;min-height:0}
+  .blueprint{font-size:13.5px}
+}
+
 /* scene */
 .gridl{stroke:rgba(30,50,80,.18);stroke-width:1}
 .axl{stroke:rgba(30,50,80,.45);stroke-width:1.5}
@@ -773,6 +799,8 @@ $('bExcel').onclick=()=>{if(!window.XLSX){alert('엑셀 도구를 불러오지 �
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'레일잇기');const d=new Date();
   XLSX.writeFile(wb,`레일잇기_탐구기록_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.xlsx`);};
 
+document.addEventListener('focusin',e=>{if(e.target.closest&&e.target.closest('.panel')&&e.target.matches('textarea,input'))document.body.classList.add('typing');});
+document.addEventListener('focusout',()=>{setTimeout(()=>{const a=document.activeElement;if(!(a&&a.closest&&a.closest('.panel')&&a.matches('textarea,input')))document.body.classList.remove('typing');},50);});
 /* ---------- 시작 ---------- */
 buildCar();setMission(1);showGate();
 })();
